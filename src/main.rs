@@ -1,34 +1,40 @@
-use std::fs;
+use std::fs::read_to_string;
 fn main() {
-    let file_contents = fs::read_to_string("./input/input.txt")
-        .expect("LogRocket: Should have been able to read the file");
+    let valid_numbers = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
 
-    let mut sum = 0;
+    let lines = read_lines("./input/input.txt");
 
-    for line in file_contents.lines() {
+    let answer: u32 = lines.iter().map(|line| {
+        let number_left = valid_numbers
+            .iter()
+            .enumerate()
+            .map(|(valid_number_index, number)| (valid_number_index, line.find(number)))
+            .filter(|(_, index_found)| index_found.is_some())
+            .map(|(valid_number_index, index_found)| (valid_number_index, index_found.expect("expect some")))
+            .min_by_key(|(_, index_found)| index_found.clone())
+            .map(|(valid_number_index, _)| valid_number_index % 9 + 1)
+            .expect("expect a value");
 
-        let mut charleft = "".to_string();
-        let mut charright= "".to_string();
+        let number_right = valid_numbers
+            .iter()
+            .enumerate()
+            .map(|(valid_number_index, number)| (valid_number_index, line.rfind(number)))
+            .filter(|(_, index_found)| index_found.is_some())
+            .map(|(valid_number_index, index_found)| (valid_number_index, index_found.expect("expect some")))
+            .min_by_key(|(_, index_found)| index_found.clone())
+            .map(|(valid_number_index, _)| valid_number_index % 9 + 1)
+            .expect("expect a value");
 
-        for character in line.chars() {
-            if character.is_digit(10) {
-                charleft = character.to_digit(10).unwrap().to_string();
-                break
-            }
-        }
+        (number_left * 10 + number_right) as u32
+    }).sum();
 
-        for character in line.chars().rev() {
-            if character.is_digit(10) {
-                charright = character.to_digit(10).unwrap().to_string();
-                break
-            }
-        }
+    println!("{answer}")
+}
 
-        sum = sum + {
-            let number_string = charleft + &charright;
-            number_string.parse::<i32>().unwrap()
-        }
-    }
-
-    print!("{}", sum)
+fn read_lines(filename: &str) -> Vec<String> {
+    read_to_string(filename)
+        .unwrap()  // panic on possible file-reading errors
+        .lines()  // split the string into an iterator of string slices
+        .map(String::from)  // make each slice into a string
+        .collect()  // gather them together into a vector
 }
